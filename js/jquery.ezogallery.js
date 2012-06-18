@@ -1,67 +1,73 @@
 $(function(){
 		
-	$.fn.ezogalerie = function(options) {
+	$.fn.ezogallery = function(itemWidth, options) {
 		var container = $(this);
 		var itemsList;
+		var loadedItems;
 		var currentItem;
 		var viewerContainer;
 		var viewer;
+		var itemsContainer;
 		var loader;
         var settings = {
 			item: {
-				className: '.item',
-				img: 'img.image',
-				title: 'span.title',
-				desc: 'span.desc'
+				className: '.eg-item',
+				img: 'img.eg-image',
+				title: 'span.eg-title',
+				desc: 'span.eg-desc'
 			},
 			viewer: {
 				container: 'body',
 				html: '\
-				<div class="viewer">\
-					<div class="background">back</div>\
-					<div class="content">\
-						<div class="close">\
+				<div class="eg-viewer">\
+					<div class="eg-background"></div>\
+					<div class="eg-content">\
+						<div class="eg-close">\
 							<a href="#">x</a>\
 						</div>\
-						<div class="prev">\
+						<div class="eg-prev">\
 							<a href="#"><</a>\
 						</div>\
-						<div class="next">\
+						<div class="eg-next">\
 							<a href="#">></a>\
 						</div>\
-						<div class="loader">\
+						<div class="eg-loader">\
 							loading\
 						</div>\
-						<div class="items">\
-							\
+						<div class="eg-items-container">\
+							<div class="eg-items">\
+								\
+							</div>\
 						</div>\
 					</div>\
 				</div>\
 				',
 				itemHtml: '\
-				<div id="{index}" class="item">\
-					<div class="image">\
+				<div id="{index}" class="eg-item">\
+					<div class="eg-image">\
 						\
 					</div>\
-					<div class="title">\
+					<div class="eg-title">\
 						\
 					</div>\
-					<div class="desc">\
+					<div class="eg-desc">\
 						\
 					</div>\
 				</div>\
 				',
-				background: '.background',
-				className: '.viewer',
-					loader: '.content .loader',
-					close: '.content .close a',
-					prev: '.content .prev a',
-					next: '.content .next a',
-					items: '.content .items',
-						item: '.item',
-							image: '.image',
-							title: '.title',
-							desc: '.desc'
+				background: '.eg-background',
+				className: '.eg-viewer',
+					content: '.eg-content',
+						loader: '.eg-content .eg-loader',
+						close: '.eg-content .eg-close a',
+						prev: '.eg-content .eg-prev a',
+						next: '.eg-content .eg-next a',
+						items: '.eg-content .eg-items-container .eg-items',
+							itemId: 'eg-item-',
+							item: '.eg-item',
+								image: '.eg-image',
+								title: '.eg-title',
+								desc: '.eg-desc'
 			}
 		};
 		
@@ -72,6 +78,7 @@ $(function(){
 				$.extend(settings, options);
 			viewerContainer = $(settings.viewer.container);
 			itemsList = new Array();
+			loadedItems = new Array();
 			init_items();
 			init_viewer();
 		}
@@ -91,10 +98,10 @@ $(function(){
 					alt: alt,
 					title: title,
 					desc: desc,
-					obj: $(this),
-					loaded: false
+					obj: $(this)
 				});
 			});
+			// trigger
 			init_item_trigger();
 		}
 		
@@ -111,30 +118,31 @@ $(function(){
 		function init_viewer() {
 			if(viewer != null) {
 				viewer.remove();
-				for(i=0; i<itemsList.length; i++) {
-					itemsList[i].loaded = false;
-				}
+				loadedItems = new Array();
 			}
 			viewerContainer.prepend(settings.viewer.html);
 			viewer = viewerContainer.find(settings.viewer.className);
-			var items = viewerContainer.find(settings.viewer.items);
-			items.hide();
+			itemsContainer = viewer.find(settings.viewer.items);
+			itemsContainer.hide();
 			viewer.hide();
 			loader = viewer.find(settings.viewer.loader);
 			loader.hide();
+			// set itemsContainer width
+			itemsContainer.css({width: itemsList.length*itemWidth});
+			// trigger
 			init_viewer_trigger();
 		}
 
 		function init_viewer_trigger() {
 			var closeBtn = viewerContainer.find(settings.viewer.close);
-			var viewerBackground = viewerContainer.find(settings.viewer.background);
+			var background = viewerContainer.find(settings.viewer.background);
 			var prevBtn = viewerContainer.find(settings.viewer.prev);
 			var nextBtn = viewerContainer.find(settings.viewer.next);
 			closeBtn.click(function(){
 				close_viewer();
 				return false;
 			});
-			viewerBackground.click(function(){
+			background.click(function(){
 				close_viewer();
 				return false;
 			});
@@ -149,16 +157,16 @@ $(function(){
 		}
 
 		function load_item(obj, callback, prev) {
-			if(!obj.loaded) {
+			if($.inArray(obj.index, loadedItems) == -1) {
 				open_loader();
 				// add an item
 				var items = viewer.find(settings.viewer.items);
-				var itemHtml = settings.viewer.itemHtml.replace('{index}', 'item-'+obj.index);
+				var itemHtml = settings.viewer.itemHtml.replace('{index}', settings.viewer.itemId+obj.index);
 				if(prev)
 					items.prepend(itemHtml);
 				else
 					items.append(itemHtml);
-				var item = items.find('#item-'+obj.index);
+				var item = items.find('#'+settings.viewer.itemId+obj.index);
 				// add image in item
 				var imgHtml = '<img src="'+obj.fullsize+'" alt="'+obj.alt+'" />';
 				var image = item.find(settings.viewer.image);
@@ -169,11 +177,17 @@ $(function(){
 				// add desc
 				var desc = item.find(settings.viewer.desc);
 				desc.append(obj.desc);
+				// set items position
+				var left = itemWidth*obj.index;
+				var marginLeft = -itemWidth*currentItem;
+				item.css({left: left});
+				itemsContainer.css({marginLeft: marginLeft});
 				// load image
 				var img = image.find('img');
 				img.load(function(){
 					close_loader();
-					itemsList[obj.index].loaded = true;
+					loadedItems.push(obj.index);
+					loadedItems.sort();
 					if(typeof callback == 'function')
 						callback();
 				});
@@ -187,8 +201,7 @@ $(function(){
 			var prevItem = currentItem-1;
 			if(itemsList[prevItem] != null) {
 				load_item(itemsList[prevItem], function(){
-					currentItem = itemsList[prevItem].index;
-					viewer_slide(currentItem);
+					viewer_slide(itemsList[prevItem]);
 				}, true);
 			}
 		}
@@ -197,25 +210,21 @@ $(function(){
 			var nextItem = currentItem+1;
 			if(itemsList[nextItem] != null) {
 				load_item(itemsList[nextItem], function(){
-					currentItem = itemsList[nextItem].index;
-					viewer_slide(currentItem);
+					viewer_slide(itemsList[nextItem]);
 				});
 			}
 		}
 
 		function open_viewer(obj) {
 			viewer.fadeIn();
-			if(obj != null) {
-				load_item(obj, function(){
-					viewer.find(settings.viewer.items).fadeIn();
-					currentItem = obj.index;
+			if(obj == null)
+				obj = itemsList[0];
+			currentItem = obj.index;
+			load_item(obj, function(){
+				viewer.find(settings.viewer.items).fadeIn(function(){
+					viewer_height(obj);
 				});
-			} else {
-				load_item(itemsList[0], function(){
-					viewer.find(settings.viewer.items).fadeIn();
-					currentItem = itemsList[0].index;
-				});
-			}
+			});
 		}
 
 		function close_viewer() {
@@ -233,7 +242,17 @@ $(function(){
 		}
 
 		function viewer_slide(obj) {
-			return true;
+			viewer_height(obj);
+			var marginLeft = -itemWidth*obj.index;
+			itemsContainer.animate({marginLeft: marginLeft}, function(){
+				currentItem = obj.index;
+			});
+		}
+
+		function viewer_height(obj) {
+			var itemHeight = viewer.find('#'+settings.viewer.itemId+obj.index).height();
+			var viewerContent = viewer.find(settings.viewer.content);
+			viewerContent.animate({height: itemHeight});
 		}
 
         return $(this);

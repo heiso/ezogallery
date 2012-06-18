@@ -1,0 +1,80 @@
+/**
+* viewer
+**/
+.eg-background {
+	background:black;
+	opacity:0.5;
+	-moz-opacity:0.5;
+	filter:alpha(opacity=5);
+	width:100%;
+	height:100%;
+	position: fixed;
+	top:0;
+	left:0;
+	z-index:1000;
+}
+.eg-viewer {
+	width:100%;
+	height:100%;
+	top:5%;
+	position: fixed;
+}
+.eg-viewer .eg-content {
+	background: white;
+	margin:auto;
+	position: relative;
+	z-index:1010;
+	width:860px;
+	height:90%;
+}
+.eg-viewer .eg-items-container {
+	overflow: hidden;
+	width:100%;
+	height:100%;
+}
+.eg-viewer .eg-close a {
+	display: block;
+	position: absolute;
+	right:50px;
+	z-index:1020;
+}
+.eg-viewer .eg-prev a,
+.eg-viewer .eg-next a {
+	display: block;
+	position: absolute;
+	height:100%;
+	width:20px;
+	cursor: pointer;
+	z-index:1020;
+}
+.eg-viewer .eg-prev a:hover,
+.eg-viewer .eg-next a:hover {
+	background: white;
+}
+.eg-viewer .eg-prev a {
+	left:0;
+}
+.eg-viewer .eg-next a {
+	right:0;
+}
+.eg-viewer .eg-loader {
+	position: fixed;
+	top:50%;
+	left:50%;
+	width:40px;
+	height:40px;
+	margin-top:-20px;
+	margin-left:-20px;
+	z-index:1020;
+}
+.eg-viewer .eg-items {
+	position: relative;
+}
+.eg-viewer .eg-item {
+	position: absolute;
+	width:860px;
+}
+.eg-viewer .eg-item .eg-title,
+.eg-viewer .eg-item .eg-desc {
+	padding:20px;
+}
