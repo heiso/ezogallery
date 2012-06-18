@@ -1,7 +1,23 @@
 /**
 * viewer
 **/
-.eg-background {
+.eg-loader {
+	position: fixed;
+	top:50%;
+	left:50%;
+	width:40px;
+	height:40px;
+	margin-top:-20px;
+	margin-left:-20px;
+	z-index:1030;
+}
+.eg-viewer {
+	width:100%;
+	height:100%;
+	top:5%;
+	position: fixed;
+}
+.eg-viewer .eg-background {
 	background:black;
 	opacity:0.5;
 	-moz-opacity:0.5;
@@ -12,12 +28,6 @@
 	top:0;
 	left:0;
 	z-index:1000;
-}
-.eg-viewer {
-	width:100%;
-	height:100%;
-	top:5%;
-	position: fixed;
 }
 .eg-viewer .eg-content {
 	background: white;
@@ -38,6 +48,12 @@
 	right:50px;
 	z-index:1020;
 }
+.eg-viewer .eg-fullscreen a {
+	display: block;
+	position: absolute;
+	right:100px;
+	z-index:1020;
+}
 .eg-viewer .eg-prev a,
 .eg-viewer .eg-next a {
 	display: block;
@@ -56,16 +72,6 @@
 }
 .eg-viewer .eg-next a {
 	right:0;
-}
-.eg-viewer .eg-loader {
-	position: fixed;
-	top:50%;
-	left:50%;
-	width:40px;
-	height:40px;
-	margin-top:-20px;
-	margin-left:-20px;
-	z-index:1020;
 }
 .eg-viewer .eg-items {
 	position: relative;

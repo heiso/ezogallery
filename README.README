@@ -1,0 +1,36 @@
+README
+
+----------------------------------------------------------------------------------------
+
+Default html template :
+
+	<div class="yourClass">
+		<div class="eg-item">
+			<img src="imageSource" alt="image description" title="image title"/>
+		</div>
+	</div>
+
+----------------------------------------------------------------------------------------
+
+Enable ezogallery on youClass :
+
+	$('.yourClass').ezogallery();
+
+----------------------------------------------------------------------------------------
+
+If you want to change defaults settings 
+(exemple: activate preload and change default description when no title attribute) :
+
+	var options = {
+		preload: true,
+		text: {
+			noDesc: 'no description'
+		}
+	};
+	$('.yourClass').ezogallery(options);
+
+----------------------------------------------------------------------------------------
+
+alt and src attributes are mandatory,
+title attribute is note mandatory, if no title, alt will be use as title
+you can change the default template, juste keep the same logic

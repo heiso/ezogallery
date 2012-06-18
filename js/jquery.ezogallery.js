@@ -1,15 +1,53 @@
 /**
 * @author    Alexandre Moatty <79301@supinfo.com>
 **/
+/**
+*	README
+*
+*	----------------------------------------------------------------------------------------
+*
+*	Default html template :
+*
+*		<div class="yourClass">
+*			<div class="eg-item">
+*				<img src="imageSource" alt="image description" title="image title"/>
+*			</div>
+*		</div>
+*
+*	----------------------------------------------------------------------------------------
+*
+*	Enable ezogallery on youClass :
+*
+*		$('.yourClass').ezogallery();
+*
+*	----------------------------------------------------------------------------------------
+*	If you want to change defaults settings 
+*	(exemple: activate preload and change default description when no title attribute) :
+*
+*		var options = {
+*			preload: true,
+*			text: {
+*				noDesc: 'no description'
+*			}
+*		};
+*		$('.yourClass').ezogallery(options);
+*
+*	----------------------------------------------------------------------------------------
+*
+*	alt and src attributes are mandatory,
+*	title attribute is note mandatory, if no title, alt will be use as title
+*	you can change the default template, juste keep the same logic
+**/
 $(function(){
-		
-	$.fn.ezogallery = function(itemWidth, options) {
+
+	$.fn.ezogallery = function(options) {
 		var container = $(this);
 		var itemsList;
 		var currentItem;
 		var viewerContainer;
 		var viewer;
 		var itemsContainer;
+		var itemWidth;
 		var loader;
 		var prevBtn;
 		var nextBtn;
@@ -23,22 +61,26 @@ $(function(){
 			},
 			viewer: {
 				container: 'body',
+				loader: '.eg-loader',
 				className: '.eg-viewer',
 				template: '\
+				<div class="eg-loader">\
+					loading\
+				</div>\
 				<div class="eg-viewer">\
 					<div class="eg-background"></div>\
 					<div class="eg-content">\
 						<div class="eg-close">\
 							<a href="#">x</a>\
 						</div>\
+						<div class="eg-fullscreen">\
+							<a href="#">[]</a>\
+						</div>\
 						<div class="eg-prev">\
 							<a href="#"><</a>\
 						</div>\
 						<div class="eg-next">\
 							<a href="#">></a>\
-						</div>\
-						<div class="eg-loader">\
-							loading\
 						</div>\
 						<div class="eg-items-container">\
 							<div class="eg-items">\
@@ -51,10 +93,10 @@ $(function(){
 				background: '.eg-background',
 				content: {
 					className: '.eg-content',
-					loader: '.eg-loader',
 					close: '.eg-close a',
 					prev: '.eg-prev a',
 					next: '.eg-next a',
+					fullscreen: '.eg-fullscreen a',
 					items: {
 						className: '.eg-items-container .eg-items',
 						item: {
@@ -122,16 +164,17 @@ $(function(){
 		function init_viewer() {
 			if(viewer == null) {
 				viewerContainer.prepend(settings.viewer.template);
+				loader = viewerContainer.find(settings.viewer.loader);
 				viewer = viewerContainer.find(settings.viewer.className);
 				itemsContainer = viewer.find(settings.viewer.content.items.className);
 				itemsContainer.css({width: itemsList.length*itemWidth});
-				loader = viewer.find(settings.viewer.content.loader);
+				itemWidth = itemsContainer.width();
 				prevBtn = viewer.find(settings.viewer.content.prev);
 				nextBtn = viewer.find(settings.viewer.content.next);
 				init_viewer_trigger();
 			}
 			viewer.hide();
-			itemsContainer.hide();
+			// itemsContainer.hide();
 			loader.hide();
 		}
 
@@ -144,6 +187,10 @@ $(function(){
 				close_viewer();
 				return false;
 			});
+			viewer.find(settings.viewer.content.fullscreen).click(function(){
+				fullscreen();
+				return false;
+			});
 			prevBtn.click(function(){
 				prev_item();
 				return false;
@@ -154,10 +201,11 @@ $(function(){
 			});
 		}
 
-		function load_item(obj, callback) {
+		function load_item(obj, callback, showLoader) {
 			var id = settings.viewer.content.items.item.idTemplate+obj.index;
 			if(!obj.loaded) {
-				open_loader();
+				if(showLoader)
+					open_loader();
 
 				// add item
 				var itemHtml = settings.viewer.content.items.item.template.replace('{index}', id);
@@ -201,7 +249,7 @@ $(function(){
 			if(itemsList[prevItem] != null) {
 				load_item(itemsList[prevItem], function(){
 					viewer_slide(itemsList[prevItem]);
-				});
+				}, true);
 			}
 		}
 
@@ -210,12 +258,14 @@ $(function(){
 			if(itemsList[nextItem] != null) {
 				load_item(itemsList[nextItem], function(){
 					viewer_slide(itemsList[nextItem]);
-				});
+				}, true);
 			}
 		}
 
 		function open_viewer(obj, preload) {
-			viewer.fadeIn();
+			if(!obj.loaded)
+				open_loader();
+			viewer.show().fadeTo(0, 0);
 			if(obj == null)
 				obj = itemsList[0];
 			currentItem = obj.index;
@@ -226,18 +276,21 @@ $(function(){
 					load_item(value, function(){
 						itemsLoaded.push(value.index);
 						if(itemsLoaded.length == itemsList.length) {
-							itemsContainer.fadeIn(function(){
-								viewer_height(obj);
-							});
+							fadeIn_viewer();
 						}
-					});
+					}, false);
 				});
 			} else {
 				load_item(obj, function(){
-					itemsContainer.fadeIn(function(){
-						viewer_height(obj);
-					});
-				});
+					fadeIn_viewer();
+				}, false);
+			}
+
+			function fadeIn_viewer() {
+				viewer_height(obj, function(){
+					viewer.fadeTo(1000, 1);
+					close_loader();
+				}, true);
 			}
 		}
 
@@ -252,7 +305,8 @@ $(function(){
 		}
 
 		function close_loader() {
-			loader.fadeOut('fast');
+			if(loader.is(':visible'))
+				loader.fadeOut('fast');
 		}
 
 		function viewer_slide(obj) {
@@ -264,17 +318,30 @@ $(function(){
 			});
 		}
 
-		function viewer_height(obj) {
+		function viewer_height(obj, callback, noAnimate) {
 			var itemHeight = viewer.find('#'+settings.viewer.content.items.item.idTemplate+obj.index).height();
 			var viewerContent = viewer.find(settings.viewer.content.className);
-			viewerContent.animate({height: itemHeight});
+			if(!noAnimate) {
+				viewerContent.animate({height: itemHeight}, function(){
+					if(typeof callback == 'function')
+						callback();
+				});
+			} else {
+				viewerContent.css({height: itemHeight});
+				if(typeof callback == 'function')
+					callback();
+			}
 		}
 
 		function btn_state() {
 			if(currentItem == itemsList[0].index) {
 				if(prevBtn.is(':visible'))
 					prevBtn.hide();
+				if(!nextBtn.is(':visible'))
+					nextBtn.show();
 			} else if(currentItem == itemsList[itemsList.length-1].index) {
+				if(!prevBtn.is(':visible'))
+					prevBtn.show();
 				if(nextBtn.is(':visible'))
 					nextBtn.hide();
 			} else {
@@ -283,6 +350,11 @@ $(function(){
 				if(!nextBtn.is(':visible'))
 					nextBtn.show();
 			}
+		}
+
+		function fullscreen() {
+			alert('t');
+			return true;
 		}
 
         return $(this);

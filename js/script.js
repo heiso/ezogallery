@@ -1,5 +1,5 @@
 $(function(){
 		
-	$('.ezogallery').ezogallery(860);
+	$('.ezogallery').ezogallery();
 
 });
