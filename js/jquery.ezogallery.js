@@ -53,6 +53,10 @@ $(function(){
 		var nextBtn;
         var settings = {
 			preload: false,
+			effects: {
+				open: 'zoom',
+				close: 'zoom'
+			},
 			text: {
 				noDesc: ''
 			},
@@ -148,7 +152,8 @@ $(function(){
 					alt: alt,
 					title: (title != '' && title != null) ? title : alt,
 					desc: (title != '' && title != null) ? alt : false,
-					loaded: false
+					loaded: false,
+					elmnt: $(this)
 				});
 				init_item_trigger(image, index);
 			});
@@ -174,7 +179,6 @@ $(function(){
 				init_viewer_trigger();
 			}
 			viewer.hide();
-			// itemsContainer.hide();
 			loader.hide();
 		}
 
@@ -224,7 +228,7 @@ $(function(){
 				item = item_pos();
 
 				// load image
-				item.find(settings.viewer.content.items.item.image).find('img').load(function(){
+				item.find(settings.viewer.content.items.item.image+' img').load(function(){
 					close_loader();
 					itemsList[obj.index].loaded = true;
 					if(typeof callback == 'function')
@@ -276,28 +280,69 @@ $(function(){
 					load_item(value, function(){
 						itemsLoaded.push(value.index);
 						if(itemsLoaded.length == itemsList.length) {
-							fadeIn_viewer();
+							effect(settings.effects.open);
 						}
 					}, false);
 				});
 			} else {
 				load_item(obj, function(){
-					fadeIn_viewer();
+					effect(settings.effects.open);
 				}, false);
 			}
 
-			function fadeIn_viewer() {
-				viewer_height(obj, function(){
-					viewer.fadeTo(1000, 1);
+			function effect(name) {
+				if(name == 'zoom') {
 					close_loader();
-				}, true);
+					var item = itemsContainer.find('#'+settings.viewer.content.items.item.idTemplate+obj.index);
+					var image = item.find(settings.viewer.content.items.item.image+' img');
+					var thumbnail = obj.elmnt.find('img');
+					var imageZoom = image.clone();
+					imageZoom.css({position:'absolute', zIndex:'1000', width:thumbnail.width(), height:thumbnail.height(), left:thumbnail.offset().left, top:thumbnail.offset().top, opacity:0});
+					obj.elmnt.append(imageZoom);
+					imageZoom.animate({width:itemWidth, height:image.height(), left:image.offset().left, top:image.offset().top, opacity:1}, function(){
+						viewer_height(obj, function(){
+							viewer.fadeTo(1000, 1, function(){
+								imageZoom.remove();
+							});
+						}, true);
+					});
+				} else if(name == 'fade') {
+					viewer_height(obj, function(){
+						viewer.fadeTo(1000, 1);
+						close_loader();
+					}, true);
+				}
 			}
 		}
 
 		function close_viewer() {
-			viewer.fadeOut(function(){
+			effect(settings.effects.close, function(){
 				init_viewer();
 			});
+			
+			function effect(name, callback) {
+				if(name == 'zoom') {
+					var item = itemsContainer.find('#'+settings.viewer.content.items.item.idTemplate+currentItem);
+					var image = item.find(settings.viewer.content.items.item.image+' img');
+					var thumbnail = itemsList[currentItem].elmnt.find('img');
+					var imageZoom = image.clone();
+					imageZoom.css({position:'absolute', zIndex:'1000'});
+					imageZoom.css(image.offset());
+					itemsList[currentItem].elmnt.append(imageZoom);
+					viewer.fadeOut(function(){
+						imageZoom.animate({width:thumbnail.width(), height:thumbnail.height(), left:thumbnail.offset().left, top:thumbnail.offset().top, opacity:0}, function(){
+							imageZoom.remove();
+							if(typeof callback == 'function')
+								callback();
+						});
+					});
+				} else if(name == 'fade') {
+					viewer.fadeOut(function(){
+						if(typeof callback == 'function')
+							callback();
+					});
+				}
+			}
 		}
 		
 		function open_loader() {
@@ -319,7 +364,7 @@ $(function(){
 		}
 
 		function viewer_height(obj, callback, noAnimate) {
-			var itemHeight = viewer.find('#'+settings.viewer.content.items.item.idTemplate+obj.index).height();
+			var itemHeight = itemsContainer.find('#'+settings.viewer.content.items.item.idTemplate+obj.index).height();
 			var viewerContent = viewer.find(settings.viewer.content.className);
 			if(!noAnimate) {
 				viewerContent.animate({height: itemHeight}, function(){
@@ -353,7 +398,7 @@ $(function(){
 		}
 
 		function fullscreen() {
-			alert('t');
+			alert('not implemented yet');
 			return true;
 		}
 
