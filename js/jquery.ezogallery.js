@@ -1,24 +1,30 @@
+/**
+* @author    Alexandre Moatty <79301@supinfo.com>
+**/
 $(function(){
 		
 	$.fn.ezogallery = function(itemWidth, options) {
 		var container = $(this);
 		var itemsList;
-		var loadedItems;
 		var currentItem;
 		var viewerContainer;
 		var viewer;
 		var itemsContainer;
 		var loader;
+		var prevBtn;
+		var nextBtn;
         var settings = {
+			preload: false,
+			text: {
+				noDesc: ''
+			},
 			item: {
-				className: '.eg-item',
-				img: 'img.eg-image',
-				title: 'span.eg-title',
-				desc: 'span.eg-desc'
+				className: '.eg-item'
 			},
 			viewer: {
 				container: 'body',
-				html: '\
+				className: '.eg-viewer',
+				template: '\
 				<div class="eg-viewer">\
 					<div class="eg-background"></div>\
 					<div class="eg-content">\
@@ -42,32 +48,37 @@ $(function(){
 					</div>\
 				</div>\
 				',
-				itemHtml: '\
-				<div id="{index}" class="eg-item">\
-					<div class="eg-image">\
-						\
-					</div>\
-					<div class="eg-title">\
-						\
-					</div>\
-					<div class="eg-desc">\
-						\
-					</div>\
-				</div>\
-				',
 				background: '.eg-background',
-				className: '.eg-viewer',
-					content: '.eg-content',
-						loader: '.eg-content .eg-loader',
-						close: '.eg-content .eg-close a',
-						prev: '.eg-content .eg-prev a',
-						next: '.eg-content .eg-next a',
-						items: '.eg-content .eg-items-container .eg-items',
-							itemId: 'eg-item-',
-							item: '.eg-item',
-								image: '.eg-image',
-								title: '.eg-title',
-								desc: '.eg-desc'
+				content: {
+					className: '.eg-content',
+					loader: '.eg-loader',
+					close: '.eg-close a',
+					prev: '.eg-prev a',
+					next: '.eg-next a',
+					items: {
+						className: '.eg-items-container .eg-items',
+						item: {
+							className: '.eg-item',
+							idTemplate: 'eg-item-',
+							template: '\
+							<div id="{index}" class="eg-item">\
+								<div class="eg-image">\
+									<img src="{fullsize}" alt="{alt}"/>\
+								</div>\
+								<div class="eg-title">\
+									<span>{title}</span>\
+								</div>\
+								<div class="eg-desc">\
+									<span>{desc}</span>\
+								</div>\
+							</div>\
+							',
+							image: '.eg-image',
+							title: '.eg-title',
+							desc: '.eg-desc',
+						}
+					}
+				}
 			}
 		};
 		
@@ -84,65 +95,52 @@ $(function(){
 		}
 		
 		function init_items() {
-			var items = container.find(settings.item.className);
-			items.each(function(index){
-				var thumbnail = $(this).find(settings.item.img).attr('src');
-				var fullsize = $(this).find(settings.item.img).attr('rel');
-				var alt = $(this).find(settings.item.img).attr('alt');
-				var title = $(this).find(settings.item.title).text();
-				var desc = $(this).find(settings.item.desc).text();
+			container.find(settings.item.className).each(function(index) {
+				var image = $(this).find('img');
+				var alt = image.attr('alt');
+				var title = image.attr('title');
 				itemsList.push({
 					index: index,
-					thumbnail: thumbnail,
-					fullsize: fullsize,
+					thumbnail: image.attr('src'),
+					fullsize: image.attr('rel'),
 					alt: alt,
-					title: title,
-					desc: desc,
-					obj: $(this)
+					title: (title != '' && title != null) ? title : alt,
+					desc: (title != '' && title != null) ? alt : false,
+					loaded: false
 				});
+				init_item_trigger(image, index);
 			});
-			// trigger
-			init_item_trigger();
 		}
 		
-		function init_item_trigger() {
-			$.each(itemsList, function(index){
-				var item = itemsList[index];
-				item.obj.click(function(){
-					open_viewer(item);
-					return false;
-				});
+		function init_item_trigger(obj, index) {
+			obj.click(function(){
+				open_viewer(itemsList[index], settings.preload);
+				return false;
 			});
 		}
 
 		function init_viewer() {
-			if(viewer != null) {
-				viewer.remove();
-				loadedItems = new Array();
+			if(viewer == null) {
+				viewerContainer.prepend(settings.viewer.template);
+				viewer = viewerContainer.find(settings.viewer.className);
+				itemsContainer = viewer.find(settings.viewer.content.items.className);
+				itemsContainer.css({width: itemsList.length*itemWidth});
+				loader = viewer.find(settings.viewer.content.loader);
+				prevBtn = viewer.find(settings.viewer.content.prev);
+				nextBtn = viewer.find(settings.viewer.content.next);
+				init_viewer_trigger();
 			}
-			viewerContainer.prepend(settings.viewer.html);
-			viewer = viewerContainer.find(settings.viewer.className);
-			itemsContainer = viewer.find(settings.viewer.items);
-			itemsContainer.hide();
 			viewer.hide();
-			loader = viewer.find(settings.viewer.loader);
+			itemsContainer.hide();
 			loader.hide();
-			// set itemsContainer width
-			itemsContainer.css({width: itemsList.length*itemWidth});
-			// trigger
-			init_viewer_trigger();
 		}
 
 		function init_viewer_trigger() {
-			var closeBtn = viewerContainer.find(settings.viewer.close);
-			var background = viewerContainer.find(settings.viewer.background);
-			var prevBtn = viewerContainer.find(settings.viewer.prev);
-			var nextBtn = viewerContainer.find(settings.viewer.next);
-			closeBtn.click(function(){
+			viewerContainer.find(settings.viewer.background).click(function(){
 				close_viewer();
 				return false;
 			});
-			background.click(function(){
+			viewer.find(settings.viewer.content.close).click(function(){
 				close_viewer();
 				return false;
 			});
@@ -156,44 +154,45 @@ $(function(){
 			});
 		}
 
-		function load_item(obj, callback, prev) {
-			if($.inArray(obj.index, loadedItems) == -1) {
+		function load_item(obj, callback) {
+			var id = settings.viewer.content.items.item.idTemplate+obj.index;
+			if(!obj.loaded) {
 				open_loader();
-				// add an item
-				var items = viewer.find(settings.viewer.items);
-				var itemHtml = settings.viewer.itemHtml.replace('{index}', settings.viewer.itemId+obj.index);
-				if(prev)
-					items.prepend(itemHtml);
+
+				// add item
+				var itemHtml = settings.viewer.content.items.item.template.replace('{index}', id);
+				itemHtml = itemHtml.replace('{fullsize}', obj.fullsize);
+				itemHtml = itemHtml.replace('{alt}', obj.alt);
+				itemHtml = itemHtml.replace('{title}', obj.title);
+				if(!obj.desc)
+					itemHtml = itemHtml.replace('{desc}', settings.text.noDesc);
 				else
-					items.append(itemHtml);
-				var item = items.find('#'+settings.viewer.itemId+obj.index);
-				// add image in item
-				var imgHtml = '<img src="'+obj.fullsize+'" alt="'+obj.alt+'" />';
-				var image = item.find(settings.viewer.image);
-				image.append(imgHtml);
-				// add title
-				var title = item.find(settings.viewer.title);
-				title.append(obj.title);
-				// add desc
-				var desc = item.find(settings.viewer.desc);
-				desc.append(obj.desc);
-				// set items position
-				var left = itemWidth*obj.index;
-				var marginLeft = -itemWidth*currentItem;
-				item.css({left: left});
-				itemsContainer.css({marginLeft: marginLeft});
+					itemHtml = itemHtml.replace('{desc}', obj.desc);
+				if(obj.index < currentItem)
+					itemsContainer.prepend(itemHtml);
+				else
+					itemsContainer.append(itemHtml);
+
+				item = item_pos();
+
 				// load image
-				var img = image.find('img');
-				img.load(function(){
+				item.find(settings.viewer.content.items.item.image).find('img').load(function(){
 					close_loader();
-					loadedItems.push(obj.index);
-					loadedItems.sort();
+					itemsList[obj.index].loaded = true;
 					if(typeof callback == 'function')
 						callback();
 				});
-			} else {
+			} else if(obj.loaded) {
+				item_pos();
 				if(typeof callback == 'function')
 					callback();
+			}
+
+			function item_pos() {
+				var item = itemsContainer.find('#'+id);
+				item.css({left: itemWidth*obj.index});
+				itemsContainer.css({marginLeft: -itemWidth*currentItem});
+				return item;
 			}
 		}
 
@@ -202,7 +201,7 @@ $(function(){
 			if(itemsList[prevItem] != null) {
 				load_item(itemsList[prevItem], function(){
 					viewer_slide(itemsList[prevItem]);
-				}, true);
+				});
 			}
 		}
 
@@ -215,16 +214,31 @@ $(function(){
 			}
 		}
 
-		function open_viewer(obj) {
+		function open_viewer(obj, preload) {
 			viewer.fadeIn();
 			if(obj == null)
 				obj = itemsList[0];
 			currentItem = obj.index;
-			load_item(obj, function(){
-				viewer.find(settings.viewer.items).fadeIn(function(){
-					viewer_height(obj);
+			btn_state();
+			if(preload) {
+				var itemsLoaded = new Array();
+				$.each(itemsList, function(i, value){
+					load_item(value, function(){
+						itemsLoaded.push(value.index);
+						if(itemsLoaded.length == itemsList.length) {
+							itemsContainer.fadeIn(function(){
+								viewer_height(obj);
+							});
+						}
+					});
 				});
-			});
+			} else {
+				load_item(obj, function(){
+					itemsContainer.fadeIn(function(){
+						viewer_height(obj);
+					});
+				});
+			}
 		}
 
 		function close_viewer() {
@@ -246,13 +260,29 @@ $(function(){
 			var marginLeft = -itemWidth*obj.index;
 			itemsContainer.animate({marginLeft: marginLeft}, function(){
 				currentItem = obj.index;
+				btn_state();
 			});
 		}
 
 		function viewer_height(obj) {
-			var itemHeight = viewer.find('#'+settings.viewer.itemId+obj.index).height();
-			var viewerContent = viewer.find(settings.viewer.content);
+			var itemHeight = viewer.find('#'+settings.viewer.content.items.item.idTemplate+obj.index).height();
+			var viewerContent = viewer.find(settings.viewer.content.className);
 			viewerContent.animate({height: itemHeight});
+		}
+
+		function btn_state() {
+			if(currentItem == itemsList[0].index) {
+				if(prevBtn.is(':visible'))
+					prevBtn.hide();
+			} else if(currentItem == itemsList[itemsList.length-1].index) {
+				if(nextBtn.is(':visible'))
+					nextBtn.hide();
+			} else {
+				if(!prevBtn.is(':visible'))
+					prevBtn.show();
+				if(!nextBtn.is(':visible'))
+					nextBtn.show();
+			}
 		}
 
         return $(this);
