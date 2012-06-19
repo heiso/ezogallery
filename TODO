@@ -1,3 +1,5 @@
 ajout support multi galerie
 ajout easing
 ajout effets de transition
+debug IE
+separer les fonction effect
