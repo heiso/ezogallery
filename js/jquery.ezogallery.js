@@ -10,6 +10,7 @@ $(function(){
 		var viewerContainer;
 		var viewer;
 		var itemsContainer;
+		var itemsCache;
 		var loader;
 		var prevBtn;
 		var nextBtn;
@@ -17,14 +18,13 @@ $(function(){
 		var viewerTriggerActive;
 		var multiGallery;
         var settings = {
-        	itemWidth: false,
 			preload: false,
 			viewerTop: 'semi-fixed',     // semi-fixed | fixed | top
 			viewerEffects: {     // zoom | fade
 				open: 'zoom',
 				close: 'fade'
 			},
-			transitionEffects: 'slide',     // slide | fade
+			transitionEffect: 'fade',     // slide | fade
 			text: {
 				noDesc: ''
 			},
@@ -55,10 +55,8 @@ $(function(){
 							<a href="#">></a>\
 						</div>\
 						<div class="eg-items-container">\
-							<div class="eg-items">\
-								\
-							</div>\
 						</div>\
+						<div class="eg-items-cache"></div>\
 					</div>\
 				</div>\
 				',
@@ -70,8 +68,8 @@ $(function(){
 					next: '.eg-next a',
 					fullscreen: '.eg-fullscreen a',
 					items: {
-						container: '.eg-items-container',
-						className: '.eg-items-container .eg-items',
+						cache: '.eg-items-cache',
+						className: '.eg-items-container',
 						item: {
 							className: '.eg-item',
 							idTemplate: 'eg-item-',
@@ -152,14 +150,8 @@ $(function(){
 					viewerContainer.prepend(settings.viewer.template);
 				loader = viewerContainer.find(settings.viewer.loader);
 				viewer = viewerContainer.find(settings.viewer.className);
-				if(!settings.itemWidth && !multiGallery) {
-					settings.itemWidth = viewer.find(settings.viewer.content.items.container).width();
-					viewer.find(settings.viewer.content.items.container).attr('width', settings.itemWidth);
-				} else if(!settings.itemWidth && multiGallery) {
-					settings.itemWidth = viewer.find(settings.viewer.content.items.container).attr('width');
-				}
 				itemsContainer = viewer.find(settings.viewer.content.items.className);
-				itemsContainer.css({width: itemsList.length*settings.itemWidth});
+				itemsCache = viewer.find(settings.viewer.content.items.cache);
 				prevBtn = viewer.find(settings.viewer.content.prev);
 				nextBtn = viewer.find(settings.viewer.content.next);
 				init_viewer_trigger();
@@ -173,13 +165,13 @@ $(function(){
 		}
 
 		function init_viewer_trigger() {
-			$(document).keydown(function(e) {
+			/*$(document).keydown(function(e) {
 				if(viewerTriggerActive) {
 				    if(e.keyCode == 27) {
 				        viewer_close();
 				    }
 				}
-			});
+			});*/
 			viewerContainer.find(settings.viewer.background).click(function(){
 				if(viewerTriggerActive)
 					viewer_close();
@@ -207,59 +199,24 @@ $(function(){
 			});
 		}
 
-		function viewer_load_item(obj, callback, showLoader) {
-			var id = settings.viewer.content.items.item.idTemplate+obj.index;
-			if(!obj.loaded) {
-				if(showLoader)
-					loader_open();
-
-				// add item
-				var itemHtml = settings.viewer.content.items.item.template.replace('{index}', id);
-				itemHtml = itemHtml.replace('{fullsize}', obj.fullsize);
-				itemHtml = itemHtml.replace('{alt}', obj.alt);
-				itemHtml = itemHtml.replace('{title}', obj.title);
-				if(!obj.desc)
-					itemHtml = itemHtml.replace('{desc}', settings.text.noDesc);
-				else
-					itemHtml = itemHtml.replace('{desc}', obj.desc);
-				if(obj.index < currentItem.index)
-					itemsContainer.prepend(itemHtml);
-				else
-					itemsContainer.append(itemHtml);
-
-				var item = itemsContainer.find('#'+id);
-				itemsList[obj.index].elmntViewer = item;
-				viewer_item_pos(obj);
-
-				// load image
-				item.find(settings.viewer.content.items.item.image+' img').ezoloadImage(function(){
-					loader_close();
-					itemsList[obj.index].loaded = true;
-					if(typeof callback == 'function')
-						callback();
-				});
-			} else if(obj.loaded) {
-				viewer_item_pos(obj);
-				if(typeof callback == 'function')
-					callback();
-			}
-		}
 
 		function viewer_prev() {
+			viewerTriggerActive = false;
 			var prevItem = currentItem.index-1;
 			if(itemsList[prevItem] != null) {
 				viewer_load_item(itemsList[prevItem], function(){
 					viewer_slide(itemsList[prevItem]);
-				}, true);
+				});
 			}
 		}
 
 		function viewer_next() {
+			viewerTriggerActive = false;
 			var nextItem = currentItem.index+1;
 			if(itemsList[nextItem] != null) {
 				viewer_load_item(itemsList[nextItem], function(){
 					viewer_slide(itemsList[nextItem]);
-				}, true);
+				});
 			}
 		}
 
@@ -268,8 +225,6 @@ $(function(){
 				currentItem = itemsList[0];
 			else
 				currentItem = obj;
-			if(!currentItem.loaded)
-				loader_open();
 			viewer.show().fadeTo(0, 0);
 			if(settings.viewerTop == 'semi-fixed')
 				viewer.css({position:'absolute', top:$(window).scrollTop()});
@@ -284,23 +239,26 @@ $(function(){
 					viewer_load_item(value, function(){
 						itemsLoaded.push(value.index);
 						if(itemsLoaded.length == itemsList.length) {
+							currentItem.elmntViewer.appendTo(itemsContainer);
 							viewer_effect(settings.viewerEffects.open, 'in', function(){
 								viewerTriggerActive = true;
 							});
 						}
-					}, false);
+					});
 				});
 			} else {
 				viewer_load_item(currentItem, function(){
+					currentItem.elmntViewer.appendTo(itemsContainer);
 					viewer_effect(settings.viewerEffects.open, 'in', function(){
 						viewerTriggerActive = true;
 					});
-				}, false);
+				});
 			}
 		}
 
 		function viewer_close() {
 			viewer_effect(settings.viewerEffects.close, 'out', function(){
+				currentItem.elmntViewer.appendTo(itemsCache);
 				init_viewer();
 			});
 		}
@@ -315,9 +273,12 @@ $(function(){
 		}
 
 		function viewer_slide(obj) {
-			viewer_slide_effect(obj, settings.transitionEffects, function(){
+			obj.elmntViewer.appendTo(itemsContainer);
+			viewer_slide_effect(obj, settings.transitionEffect, function(){
+				currentItem.elmntViewer.appendTo(itemsCache);
 				currentItem = obj;
 				viewer_btn_state();
+				viewerTriggerActive = true;
 			});
 		}
 
@@ -355,15 +316,11 @@ $(function(){
 			}
 		}
 
-		function viewer_item_pos(obj) {
-			obj.elmntViewer.css({left: settings.itemWidth*obj.index});
-			itemsContainer.css({marginLeft: -settings.itemWidth*currentItem.index});
-		}
-
 		function viewer_clear() {
 			viewer.find(settings.viewer.content.items.className).empty();
+			viewer.find(settings.viewer.content.items.cache).empty();
 			viewer.attr('style', '');
-			viewer.find(settings.viewer.content.items.container).attr('style', '').attr('width', '');
+			viewer.find(settings.viewer.content.className).attr('style', '');
 			$.each(itemsList, function(i, value){
 				value.loaded = false;
 			});
@@ -372,6 +329,34 @@ $(function(){
 		function viewer_fullscreen() {
 			alert('not implemented yet');
 			return true;
+		}
+
+		function viewer_load_item(obj, callback) {
+			var id = settings.viewer.content.items.item.idTemplate+obj.index;
+			if(!obj.loaded) {
+				loader_open();
+				// add item
+				var itemHtml = settings.viewer.content.items.item.template.replace('{index}', id);
+				itemHtml = itemHtml.replace('{fullsize}', obj.fullsize);
+				itemHtml = itemHtml.replace('{alt}', obj.alt);
+				itemHtml = itemHtml.replace('{title}', obj.title);
+				if(!obj.desc)
+					itemHtml = itemHtml.replace('{desc}', settings.text.noDesc);
+				else
+					itemHtml = itemHtml.replace('{desc}', obj.desc);
+				itemsCache.append(itemHtml);
+				itemsList[obj.index].elmntViewer = itemsCache.find('#'+id);
+				// load image
+				itemsList[obj.index].elmntViewer.find(settings.viewer.content.items.item.image+' img').ezoloadImage(function(){
+					itemsList[obj.index].loaded = true;
+					loader_close();
+					if(typeof callback == 'function')
+						callback();
+				});
+			} else if(obj.loaded) {
+				if(typeof callback == 'function')
+					callback();
+			}
 		}
 
 		function viewer_slide_effect(obj, effect, fct) {
@@ -392,23 +377,28 @@ $(function(){
 	    	* Effects
 	    	**/
 	    	function ezoSlide(obj) {
+	    		if(currentItem.index < obj.index) {	
+	    			var pos = currentItem.elmntViewer.width();
+	    			var left = '-='+currentItem.elmntViewer.width();
+	    		} else {
+	    			var pos = -currentItem.elmntViewer.width();
+	    			var left = '+='+currentItem.elmntViewer.width();
+	    		}
+	    		obj.elmntViewer.css({marginLeft: pos});
 	    		viewer_height(obj);
-				var marginLeft = -settings.itemWidth*obj.index;
-				itemsContainer.animate({marginLeft: marginLeft}, function(){
+	    		itemsContainer.animate({marginLeft: left}, function(){
+	    			obj.elmntViewer.attr('style', '');
+	    			itemsContainer.attr('style', '');
 					callback();
-				});
+	    		});
 	    	}
 
 	    	function ezoFade(obj) {
-				var marginLeft = -settings.itemWidth*obj.index;
 				viewer_height(obj);
-				obj
-
-	    		itemsContainer.fadeTo(1000, 0, function(){
-	    			itemsContainer.css({marginLeft: marginLeft})
-					itemsContainer.fadeTo(1000, 1, function(){
-						callback();
-					})
+				currentItem.elmntViewer.fadeTo(1000, 0);
+	    		obj.elmntViewer.fadeTo(0,0).fadeTo(1000, 1, function(){
+	    			currentItem.elmntViewer.fadeTo(0,1);
+					callback();
 	    		});
 	    	}
 
@@ -438,7 +428,6 @@ $(function(){
 	    	function ezoFadeIn() {
 	    		viewer_height(currentItem, function(){
 					viewer.fadeTo(1000, 1);
-					loader_close();
 					callback();
 				}, true);
 	    	}
@@ -450,8 +439,7 @@ $(function(){
 	    	}
 
 	    	function ezoZoomIn() {
-	    		var item = currentItem.elmntViewer;
-				var image = item.find(settings.viewer.content.items.item.image+' img');
+				var image = currentItem.elmntViewer.find(settings.viewer.content.items.item.image+' img');
 				var thumbnail = currentItem.elmnt.find('img');
 				var imageZoom = image.clone();
 				imageZoom.addClass('eg-zoom').css({
@@ -463,10 +451,9 @@ $(function(){
 					top:thumbnail.offset().top, opacity:0
 				});
 				currentItem.elmnt.append(imageZoom);
-				currentItem.elmnt.find('.eg-zoom').ezoloadImage(function(){
-					loader_close();
+				imageZoom.ezoloadImage(function(){
 					imageZoom.animate({
-						width:settings.itemWidth, 
+						width:image.width(), 
 						height:image.height(), 
 						left:image.offset().left, 
 						top:image.offset().top, 
@@ -483,13 +470,12 @@ $(function(){
 	    	}
 
 	    	function ezoZoomOut() {
-	    		var item = currentItem.elmntViewer;
-				var image = item.find(settings.viewer.content.items.item.image+' img');
+				var image = currentItem.elmntViewer.find(settings.viewer.content.items.item.image+' img');
 				var thumbnail = currentItem.elmnt.find('img');
 				var imageZoom = image.clone();
 				imageZoom.addClass('eg-zoom').css({position:'absolute', zIndex:'1000', left:image.offset().left, top:image.offset().top});
 				currentItem.elmnt.append(imageZoom);
-				currentItem.elmnt.find('.eg-zoom').ezoloadImage(function(){
+				imageZoom.ezoloadImage(function(){
 					viewer.fadeOut(function(){
 						imageZoom.animate({
 							width:thumbnail.width(), 

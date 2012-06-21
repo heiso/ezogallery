@@ -1,6 +1,8 @@
 ajout easing
 ajout effets de transition
-optimiser itemWidth (images de width diff)
 multi gallery avec template diff
-stocker items ?
 
+ne pas vider le cache en multi gallery ?
+ESC not working
+
+debug IE8

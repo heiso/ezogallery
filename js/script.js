@@ -1,10 +1,15 @@
 $(function(){
 		
 	$('.ezogallery').ezogallery({
-		viewerTop: 'top'
+		viewerTop: 'top',
+		transitionEffect: 'slide',
+		viewerEffects: {
+			open: 'zoom',
+			close: 'fade'
+		}
 	});
 	$('.ezogallery2').ezogallery({
-		effects: {
+		viewerEffects: {
 			open: 'fade',
 			close: 'zoom'
 		}
