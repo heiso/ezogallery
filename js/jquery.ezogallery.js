@@ -1,6 +1,7 @@
 /**
 * @author    Alexandre Moatty <79301@supinfo.com>
 **/
+zhgfjhyzhvf
 $(function(){
 
 	$.fn.ezogallery = function(options) {
