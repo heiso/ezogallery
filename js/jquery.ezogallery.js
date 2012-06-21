@@ -1,43 +1,6 @@
 /**
 * @author    Alexandre Moatty <79301@supinfo.com>
 **/
-/**
-*	README
-*
-*	----------------------------------------------------------------------------------------
-*
-*	Default html template :
-*
-*		<div class="yourClass">
-*			<div class="eg-item">
-*				<img src="imageSource" alt="image description" title="image title"/>
-*			</div>
-*		</div>
-*
-*	----------------------------------------------------------------------------------------
-*
-*	Enable ezogallery on youClass :
-*
-*		$('.yourClass').ezogallery();
-*
-*	----------------------------------------------------------------------------------------
-*	If you want to change defaults settings 
-*	(exemple: activate preload and change default description when no title attribute) :
-*
-*		var options = {
-*			preload: true,
-*			text: {
-*				noDesc: 'no description'
-*			}
-*		};
-*		$('.yourClass').ezogallery(options);
-*
-*	----------------------------------------------------------------------------------------
-*
-*	alt and src attributes are mandatory,
-*	title attribute is note mandatory, if no title, alt will be use as title
-*	you can change the default template, juste keep the same logic
-**/
 $(function(){
 
 	$.fn.ezogallery = function(options) {
@@ -47,7 +10,6 @@ $(function(){
 		var viewerContainer;
 		var viewer;
 		var itemsContainer;
-		var itemWidth;
 		var loader;
 		var prevBtn;
 		var nextBtn;
@@ -55,6 +17,7 @@ $(function(){
 		var viewerTriggerActive;
 		var multiGallery;
         var settings = {
+        	itemWidth: false,
 			preload: false,
 			viewerTop: 'semi-fixed',     // semi-fixed | fixed | top
 			effects: {     // zoom | fade
@@ -106,6 +69,7 @@ $(function(){
 					next: '.eg-next a',
 					fullscreen: '.eg-fullscreen a',
 					items: {
+						container: '.eg-items-container',
 						className: '.eg-items-container .eg-items',
 						item: {
 							className: '.eg-item',
@@ -152,7 +116,7 @@ $(function(){
 				var alt = image.attr('alt');
 				var title = image.attr('title');
 				image.fadeTo(0,0);
-				image.load(function(){
+				image.ezoloadImage(function(){
 					image.fadeTo(1000,1);
 				});
 				itemsList.push({
@@ -186,9 +150,14 @@ $(function(){
 					viewerContainer.prepend(settings.viewer.template);
 				loader = viewerContainer.find(settings.viewer.loader);
 				viewer = viewerContainer.find(settings.viewer.className);
-				itemWidth = viewer.find(settings.viewer.content.className).width();
+				if(!settings.itemWidth && !multiGallery) {
+					settings.itemWidth = viewer.find(settings.viewer.content.items.container).width();
+					viewer.find(settings.viewer.content.items.container).attr('width', settings.itemWidth);
+				} else if(!settings.itemWidth && multiGallery) {
+					settings.itemWidth = viewer.find(settings.viewer.content.items.container).attr('width');
+				}
 				itemsContainer = viewer.find(settings.viewer.content.items.className);
-				itemsContainer.css({width: itemsList.length*itemWidth});
+				itemsContainer.css({width: itemsList.length*settings.itemWidth});
 				prevBtn = viewer.find(settings.viewer.content.prev);
 				nextBtn = viewer.find(settings.viewer.content.next);
 				init_viewer_trigger();
@@ -256,25 +225,26 @@ $(function(){
 				else
 					itemsContainer.append(itemHtml);
 
-				item = item_pos();
+				var item = itemsContainer.find('#'+id);
+				item_pos();
 
 				// load image
-				item.find(settings.viewer.content.items.item.image+' img').load(function(){
+				item.find(settings.viewer.content.items.item.image+' img').ezoloadImage(function(){
 					loader_close();
 					itemsList[obj.index].loaded = true;
 					if(typeof callback == 'function')
 						callback();
 				});
 			} else if(obj.loaded) {
+				var item = itemsContainer.find('#'+id);
 				item_pos();
 				if(typeof callback == 'function')
 					callback();
 			}
 
 			function item_pos() {
-				var item = itemsContainer.find('#'+id);
-				item.css({left: itemWidth*obj.index});
-				itemsContainer.css({marginLeft: -itemWidth*currentItem.index});
+				item.css({left: settings.itemWidth*obj.index});
+				itemsContainer.css({marginLeft: -settings.itemWidth*currentItem.index});
 				return item;
 			}
 		}
@@ -350,7 +320,7 @@ $(function(){
 
 		function viewer_slide(obj) {
 			viewer_height(obj);
-			var marginLeft = -itemWidth*obj.index;
+			var marginLeft = -settings.itemWidth*obj.index;
 			itemsContainer.animate({marginLeft: marginLeft}, function(){
 				currentItem = obj;
 				viewer_btn_state();
@@ -393,6 +363,8 @@ $(function(){
 
 		function viewer_clear() {
 			viewer.find(settings.viewer.content.items.className).empty();
+			viewer.attr('style', '');
+			viewer.find(settings.viewer.content.items.container).attr('style', '').attr('width', '');
 			$.each(itemsList, function(i, value){
 				value.loaded = false;
 			});
@@ -452,10 +424,10 @@ $(function(){
 					top:thumbnail.offset().top, opacity:0
 				});
 				currentItem.elmnt.append(imageZoom);
-				currentItem.elmnt.find('.eg-zoom').load(function(){
+				currentItem.elmnt.find('.eg-zoom').ezoloadImage(function(){
 					loader_close();
 					imageZoom.animate({
-						width:itemWidth, 
+						width:settings.itemWidth, 
 						height:image.height(), 
 						left:image.offset().left, 
 						top:image.offset().top, 
@@ -478,7 +450,7 @@ $(function(){
 				var imageZoom = image.clone();
 				imageZoom.addClass('eg-zoom').css({position:'absolute', zIndex:'1000', left:image.offset().left, top:image.offset().top});
 				currentItem.elmnt.append(imageZoom);
-				currentItem.elmnt.find('.eg-zoom').load(function(){
+				currentItem.elmnt.find('.eg-zoom').ezoloadImage(function(){
 					viewer.fadeOut(function(){
 						imageZoom.animate({
 							width:thumbnail.width(), 
@@ -513,6 +485,20 @@ $(function(){
 
     ezoucfirst = function(str) {
     	return str.charAt(0).toUpperCase()+str.substr(1);
+    }
+
+    $.fn.ezoloadImage = function(callback) {
+    	var item = $(this);
+    	/**
+    	* IE tips
+    	**/
+    	if(item.is('img') && navigator.appName == "Microsoft Internet Explorer")
+    		item.attr('src', item.attr('src')+'?'+new Date().getTime());
+    	item.load(function(){
+    		if(typeof callback == 'function')
+				callback();
+    	});
+    	return $(this);
     }
 		
 });
