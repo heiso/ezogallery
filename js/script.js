@@ -4,15 +4,15 @@ $(function(){
 		viewerTop: 'top',
 		transitionEffect: 'slide',
 		viewerEffects: {
-			open: 'zoom',
+			open: 'fade',
 			close: 'fade'
 		}
 	});
-	$('.ezogallery2').ezogallery({
-		viewerEffects: {
-			open: 'fade',
-			close: 'zoom'
-		}
-	});
+	// $('.ezogallery2').ezogallery({
+	// 	viewerEffects: {
+	// 		open: 'fade',
+	// 		close: 'zoom'
+	// 	}
+	// });
 
 });

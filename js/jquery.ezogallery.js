@@ -21,7 +21,7 @@ $(function(){
 			preload: false,
 			viewerTop: 'semi-fixed',     // semi-fixed | fixed | top
 			viewerEffects: {     // zoom | fade
-				open: 'zoom',
+				open: 'fade',
 				close: 'fade'
 			},
 			transitionEffect: 'fade',     // slide | fade
@@ -225,13 +225,13 @@ $(function(){
 				currentItem = itemsList[0];
 			else
 				currentItem = obj;
-			viewer.show().fadeTo(0, 0);
 			if(settings.viewerTop == 'semi-fixed')
 				viewer.css({position:'absolute', top:$(window).scrollTop()});
 			else if(settings.viewerTop == 'fixed')
 				viewer.css({position:'fixed'});
 			else if(settings.viewerTop == 'top')
 				viewer.css({position:'absolute'});
+			viewer.fadeTo(0,0).show();
 			viewer_btn_state();
 			if(preload) {
 				var itemsLoaded = new Array();
@@ -283,7 +283,7 @@ $(function(){
 		}
 
 		function viewer_height(obj, callback, noAnimate) {
-			var itemHeight = obj.elmntViewer.height();
+			var itemHeight = obj.elmntViewer;
 			var viewerContent = viewer.find(settings.viewer.content.className);
 			if(!noAnimate) {
 				viewerContent.animate({height: itemHeight}, function(){
@@ -349,6 +349,7 @@ $(function(){
 				// load image
 				itemsList[obj.index].elmntViewer.find(settings.viewer.content.items.item.image+' img').ezoloadImage(function(){
 					itemsList[obj.index].loaded = true;
+					itemsList[obj.index].imageHeight = itemsList[obj.index].elmntViewer.find(settings.viewer.content.items.item.image+' img').height();
 					loader_close();
 					if(typeof callback == 'function')
 						callback();
@@ -395,9 +396,9 @@ $(function(){
 
 	    	function ezoFade(obj) {
 				viewer_height(obj);
-				currentItem.elmntViewer.fadeTo(1000, 0);
+				// currentItem.elmntViewer.fadeTo(1000, 0);
 	    		obj.elmntViewer.fadeTo(0,0).fadeTo(1000, 1, function(){
-	    			currentItem.elmntViewer.fadeTo(0,1);
+	    			// currentItem.elmntViewer.fadeTo(0,1);
 					callback();
 	    		});
 	    	}
