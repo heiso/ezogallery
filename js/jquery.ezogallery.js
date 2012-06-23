@@ -173,13 +173,13 @@ $(function(){
 		}
 
 		function init_viewer_trigger() {
-			/*$(document).keydown(function(e) {
+			$(document).keydown(function(e) {
 				if(viewerTriggerActive) {
 				    if(e.keyCode == 27) {
 				        viewer_close();
 				    }
 				}
-			});*/
+			});
 			background.click(function(){
 				if(viewerTriggerActive)
 					viewer_close();
@@ -206,7 +206,6 @@ $(function(){
 				return false;
 			});
 		}
-
 
 		function viewer_prev() {
 			viewerTriggerActive = false;
@@ -285,15 +284,15 @@ $(function(){
 		}
 
 		function viewer_height(obj, callback, noAnimate) {
+			var itemWidth = obj.elmntViewer.width();
 			var itemHeight = obj.elmntViewer.height();
-			viewerContent
 			if(!noAnimate) {
-				viewerContent.animate({height: itemHeight}, function(){
+				viewerContent.animate({width: itemWidth, height: itemHeight}, function(){
 					if(typeof callback == 'function')
 						callback();
 				});
 			} else {
-				viewerContent.css({height: itemHeight});
+				viewerContent.css({width: itemWidth, height: itemHeight});
 				if(typeof callback == 'function')
 					callback();
 			}
@@ -364,7 +363,8 @@ $(function(){
 		function viewer_slide_effect(obj, effect, fct) {
 	    	var validEffects = new Array(
 	    		'slide',
-	    		'fade'
+	    		'fade',
+	    		'none'
 	    	);
 	    	if($.inArray(effect, validEffects) == -1)
 	    		return false;
@@ -403,12 +403,17 @@ $(function(){
 	    		});
 	    	}
 
+	    	function ezoNone(obj) {
+				viewer_height(obj, false, true);
+				callback();
+	    	}
 	    }
 
 		function viewer_effect(effect, direction, fct) {
 	    	var validEffects = new Array(
 	    		'fade',
-	    		'zoom'
+	    		'zoom',
+	    		'back'
 	    	);
 	    	var validDirections = new Array(
 	    		'in',
@@ -457,20 +462,20 @@ $(function(){
 				});
 				currentItem.elmnt.append(imageZoom);
 				imageZoom.ezoloadImage(function(){
-					imageZoom.animate({
-						width:image.width(), 
-						height:image.height(), 
-						left:image.offset().left, 
-						top:image.offset().top, 
-						opacity:1
-					}, function(){
-						viewer_height(currentItem, function(){
+					viewer_height(currentItem, function(){
+						imageZoom.animate({
+							width:image.width(), 
+							height:image.height(), 
+							left:image.offset().left, 
+							top:image.offset().top, 
+							opacity:1
+						}, function(){
 							viewerContent.fadeTo(1000, 1, function(){
 								imageZoom.remove();
 								callback();
 							});
-						}, true);
-					});
+						});
+					}, true);
 				});
 	    	}
 
@@ -497,6 +502,59 @@ $(function(){
 				});
 	    	}
 
+	    	function ezoBackIn() {
+	    		background.fadeTo(1000,0.5);
+				var image = currentItem.elmntViewer.find(settings.viewer.content.items.item.image+' img');
+				var imageZoom = image.clone();
+				imageZoom.addClass('eg-zoom').css({
+					position:'absolute',
+					zIndex:'1000',
+					width:0,
+					height:0,
+					left:'50%',
+					top:'50%',
+					opacity:0
+				});
+				currentItem.elmnt.append(imageZoom);
+				imageZoom.ezoloadImage(function(){
+					viewer_height(currentItem, function(){
+						imageZoom.animate({
+							width:image.width(), 
+							height:image.height(), 
+							left:image.offset().left, 
+							top:image.offset().top, 
+							opacity:1
+						}, function(){
+							viewerContent.fadeTo(1000, 1, function(){
+								imageZoom.remove();
+								callback();
+							});
+						});
+					}, true);
+				});
+	    	}
+
+	    	function ezoBackOut() {
+	    		background.fadeTo(1000,0);
+				var image = currentItem.elmntViewer.find(settings.viewer.content.items.item.image+' img');
+				var imageZoom = image.clone();
+				imageZoom.addClass('eg-zoom').css({position:'absolute', zIndex:'1000', left:image.offset().left, top:image.offset().top});
+				currentItem.elmnt.append(imageZoom);
+				imageZoom.ezoloadImage(function(){
+					viewer.fadeOut(function(){
+						imageZoom.animate({
+							width:0, 
+							height:0, 
+							left:'50%', 
+							top:'50%', 
+							opacity:0
+						}, function(){
+							imageZoom.remove();
+							callback();
+						});
+					});
+				});
+	    	}
 	    }
 
 	    function loader_open() {

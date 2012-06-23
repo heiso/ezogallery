@@ -2,20 +2,17 @@ $(function(){
 		
 	$('.ezogallery').ezogallery({
 		viewerTop: 'semi-fixed',
-		transitionEffect: 'fade',
+		transitionEffect: 'wave',
 		viewerEffects: {
-			open: 'fade',
-			close: 'fade'
+			open: 'back',
+			close: 'back'
 		}
 	});
 	$('.ezogallery2').ezogallery({
 		viewerEffects: {
-			open: 'fade',
-			close: 'fade'
+			open: 'back',
+			close: 'back'
 		}
 	});
-
-	// $('.ezogallery').ezogallery();
-	// $('.ezogallery2').ezogallery();
 
 });
