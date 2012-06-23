@@ -5,13 +5,17 @@ $(function(){
 
 	$.fn.ezogallery = function(options) {
 		var container = $(this);
+		var open = false;
 		var itemsList;
 		var currentItem;
 		var viewerContainer;
 		var viewer;
+		var background;
+		var viewerContent;
 		var itemsContainer;
 		var itemsCache;
 		var loader;
+		var loaderViewer;
 		var prevBtn;
 		var nextBtn;
 		var itemTriggerActive;
@@ -36,9 +40,7 @@ $(function(){
 				loader: '.eg-loader',
 				className: '.eg-viewer',
 				template: '\
-				<div class="eg-loader">\
-					loading\
-				</div>\
+				<div class="eg-loader"></div>\
 				<div class="eg-viewer">\
 					<div class="eg-background"></div>\
 					<div class="eg-content">\
@@ -54,6 +56,7 @@ $(function(){
 						<div class="eg-next">\
 							<a href="#">></a>\
 						</div>\
+						<div class="eg-loader-viewer"></div>\
 						<div class="eg-items-container">\
 						</div>\
 						<div class="eg-items-cache"></div>\
@@ -66,6 +69,7 @@ $(function(){
 					close: '.eg-close a',
 					prev: '.eg-prev a',
 					next: '.eg-next a',
+					loader: '.eg-loader-viewer',
 					fullscreen: '.eg-fullscreen a',
 					items: {
 						cache: '.eg-items-cache',
@@ -150,6 +154,9 @@ $(function(){
 					viewerContainer.prepend(settings.viewer.template);
 				loader = viewerContainer.find(settings.viewer.loader);
 				viewer = viewerContainer.find(settings.viewer.className);
+				loaderViewer = viewer.find(settings.viewer.content.loader);
+				background = viewer.find(settings.viewer.background);
+				viewerContent = viewer.find(settings.viewer.content.className);
 				itemsContainer = viewer.find(settings.viewer.content.items.className);
 				itemsCache = viewer.find(settings.viewer.content.items.cache);
 				prevBtn = viewer.find(settings.viewer.content.prev);
@@ -162,6 +169,7 @@ $(function(){
 			}
 			viewer.hide();
 			loader.hide();
+			loaderViewer.hide();
 		}
 
 		function init_viewer_trigger() {
@@ -172,7 +180,7 @@ $(function(){
 				    }
 				}
 			});*/
-			viewerContainer.find(settings.viewer.background).click(function(){
+			background.click(function(){
 				if(viewerTriggerActive)
 					viewer_close();
 				return false;
@@ -231,7 +239,7 @@ $(function(){
 				viewer.css({position:'fixed'});
 			else if(settings.viewerTop == 'top')
 				viewer.css({position:'absolute'});
-			viewer.fadeTo(0,0).show();
+			viewer.show();
 			viewer_btn_state();
 			if(preload) {
 				var itemsLoaded = new Array();
@@ -241,6 +249,7 @@ $(function(){
 						if(itemsLoaded.length == itemsList.length) {
 							currentItem.elmntViewer.appendTo(itemsContainer);
 							viewer_effect(settings.viewerEffects.open, 'in', function(){
+								open = true;
 								viewerTriggerActive = true;
 							});
 						}
@@ -250,6 +259,7 @@ $(function(){
 				viewer_load_item(currentItem, function(){
 					currentItem.elmntViewer.appendTo(itemsContainer);
 					viewer_effect(settings.viewerEffects.open, 'in', function(){
+						open = true;
 						viewerTriggerActive = true;
 					});
 				});
@@ -259,17 +269,9 @@ $(function(){
 		function viewer_close() {
 			viewer_effect(settings.viewerEffects.close, 'out', function(){
 				currentItem.elmntViewer.appendTo(itemsCache);
+				open = false;
 				init_viewer();
 			});
-		}
-		
-		function loader_open() {
-			loader.fadeIn('fast');
-		}
-
-		function loader_close() {
-			if(loader.is(':visible'))
-				loader.fadeOut('fast');
 		}
 
 		function viewer_slide(obj) {
@@ -283,8 +285,8 @@ $(function(){
 		}
 
 		function viewer_height(obj, callback, noAnimate) {
-			var itemHeight = obj.elmntViewer;
-			var viewerContent = viewer.find(settings.viewer.content.className);
+			var itemHeight = obj.elmntViewer.height();
+			viewerContent
 			if(!noAnimate) {
 				viewerContent.animate({height: itemHeight}, function(){
 					if(typeof callback == 'function')
@@ -320,7 +322,7 @@ $(function(){
 			viewer.find(settings.viewer.content.items.className).empty();
 			viewer.find(settings.viewer.content.items.cache).empty();
 			viewer.attr('style', '');
-			viewer.find(settings.viewer.content.className).attr('style', '');
+			viewerContent.attr('style', '');
 			$.each(itemsList, function(i, value){
 				value.loaded = false;
 			});
@@ -349,7 +351,6 @@ $(function(){
 				// load image
 				itemsList[obj.index].elmntViewer.find(settings.viewer.content.items.item.image+' img').ezoloadImage(function(){
 					itemsList[obj.index].loaded = true;
-					itemsList[obj.index].imageHeight = itemsList[obj.index].elmntViewer.find(settings.viewer.content.items.item.image+' img').height();
 					loader_close();
 					if(typeof callback == 'function')
 						callback();
@@ -396,9 +397,8 @@ $(function(){
 
 	    	function ezoFade(obj) {
 				viewer_height(obj);
-				// currentItem.elmntViewer.fadeTo(1000, 0);
+				currentItem.elmntViewer.fadeTo(1000, 0);
 	    		obj.elmntViewer.fadeTo(0,0).fadeTo(1000, 1, function(){
-	    			// currentItem.elmntViewer.fadeTo(0,1);
 					callback();
 	    		});
 	    	}
@@ -427,19 +427,22 @@ $(function(){
 	    	* Effects
 	    	**/
 	    	function ezoFadeIn() {
+	    		background.fadeTo(1000,0.5);
+				viewerContent.fadeTo(1000, 1);
 	    		viewer_height(currentItem, function(){
-					viewer.fadeTo(1000, 1);
 					callback();
 				}, true);
 	    	}
 
 	    	function ezoFadeOut() {
-	    		viewer.fadeOut(function(){
-					callback();
-				});
+	    		background.fadeTo(1000, 0);
+	    		viewerContent.fadeTo(1000, 0, function(){
+	    			callback();
+	    		})
 	    	}
 
 	    	function ezoZoomIn() {
+	    		background.fadeTo(1000,0.5);
 				var image = currentItem.elmntViewer.find(settings.viewer.content.items.item.image+' img');
 				var thumbnail = currentItem.elmnt.find('img');
 				var imageZoom = image.clone();
@@ -449,7 +452,8 @@ $(function(){
 					width:thumbnail.width(),
 					height:thumbnail.height(),
 					left:thumbnail.offset().left,
-					top:thumbnail.offset().top, opacity:0
+					top:thumbnail.offset().top,
+					opacity:0
 				});
 				currentItem.elmnt.append(imageZoom);
 				imageZoom.ezoloadImage(function(){
@@ -461,7 +465,7 @@ $(function(){
 						opacity:1
 					}, function(){
 						viewer_height(currentItem, function(){
-							viewer.fadeTo(1000, 1, function(){
+							viewerContent.fadeTo(1000, 1, function(){
 								imageZoom.remove();
 								callback();
 							});
@@ -471,6 +475,7 @@ $(function(){
 	    	}
 
 	    	function ezoZoomOut() {
+	    		background.fadeTo(1000,0);
 				var image = currentItem.elmntViewer.find(settings.viewer.content.items.item.image+' img');
 				var thumbnail = currentItem.elmnt.find('img');
 				var imageZoom = image.clone();
@@ -494,6 +499,20 @@ $(function(){
 
 	    }
 
+	    function loader_open() {
+			if(open)
+				loaderViewer.fadeIn('fast');
+			else
+				loader.fadeIn('fast');
+		}
+
+		function loader_close() {
+			if(loaderViewer.is(':visible'))
+				loaderViewer.fadeOut('fast');
+			if(loader.is(':visible'))
+				loader.fadeOut('fast');
+		}
+
 		function check_multiGallery() {
 			if(!multiGallery) {
 				if($('.eg-item-container').length > 1) {
@@ -507,7 +526,7 @@ $(function(){
 		}
 
         return $(this);
-    };
+    }
 
     ezoucfirst = function(str) {
     	return str.charAt(0).toUpperCase()+str.substr(1);
@@ -518,12 +537,23 @@ $(function(){
     	/**
     	* IE tips
     	**/
-    	if(item.is('img') && navigator.appName == "Microsoft Internet Explorer")
+    	if(navigator.appName == "Microsoft Internet Explorer") {
     		item.attr('src', item.attr('src')+'?'+new Date().getTime());
-    	item.load(function(){
-    		if(typeof callback == 'function')
-				callback();
-    	});
+			if(item.prop('complete')) {
+				if(typeof callback == 'function')
+					callback();
+			} else {
+				item.load(function(){
+		    		if(typeof callback == 'function')
+						callback();
+		    	});
+			}
+		} else {
+			item.load(function(){
+	    		if(typeof callback == 'function')
+					callback();
+	    	});
+		}
     	return $(this);
     }
 		

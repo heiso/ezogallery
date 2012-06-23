@@ -5,11 +5,12 @@
 	position: fixed;
 	top:50%;
 	left:50%;
-	width:40px;
-	height:40px;
-	margin-top:-20px;
-	margin-left:-20px;
+	width:31px;
+	height:31px;
+	margin-top:-15px;
+	margin-left:-15px;
 	z-index:1030;
+	background: url('../img/loader.gif') no-repeat top left;
 }
 .eg-viewer {
 	width:100%;
@@ -18,15 +19,15 @@
 }
 .eg-viewer .eg-background {
 	background:black;
-	opacity:0.5;
-	-moz-opacity:0.5;
-	filter:alpha(opacity=50);
 	width:100%;
 	height:100%;
 	position: fixed;
 	top:0;
 	left:0;
 	z-index:1000;
+	opacity: 0;
+	-moz-opacity: 0;
+	filter:alpha(opacity=0);
 }
 .eg-viewer .eg-content {
 	background: white;
@@ -37,6 +38,16 @@
 	width:860px;
 	height:90%;
 	overflow: hidden;
+	opacity: 0;
+	-moz-opacity: 0;
+	filter:alpha(opacity=0);
+}
+.eg-viewer .eg-loader-viewer {
+	position: absolute;
+	width:128px;
+	height:15px;
+	z-index:1030;
+	background: url('../img/loader-viewer.gif') no-repeat top left;
 }
 .eg-viewer .eg-items-container {
 }
