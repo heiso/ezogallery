@@ -234,8 +234,6 @@ $(function(){
 				currentItem = obj;
 			if(settings.viewerTop == 'semi-fixed')
 				viewer.css({position:'absolute', top:$(window).scrollTop()});
-			else if(settings.viewerTop == 'fixed')
-				viewer.css({position:'fixed'});
 			else if(settings.viewerTop == 'top')
 				viewer.css({position:'absolute'});
 			viewer.show();
@@ -283,7 +281,7 @@ $(function(){
 			});
 		}
 
-		function viewer_height(obj, callback, noAnimate) {
+		function viewer_dimensions(obj, callback, noAnimate) {
 			var itemWidth = obj.elmntViewer.width();
 			var itemHeight = obj.elmntViewer.height();
 			if(!noAnimate) {
@@ -364,6 +362,7 @@ $(function(){
 	    	var validEffects = new Array(
 	    		'slide',
 	    		'fade',
+	    		'wave',
 	    		'none'
 	    	);
 	    	if($.inArray(effect, validEffects) == -1)
@@ -387,7 +386,7 @@ $(function(){
 	    			var left = '+='+currentItem.elmntViewer.width();
 	    		}
 	    		obj.elmntViewer.css({marginLeft: pos});
-	    		viewer_height(obj);
+	    		viewer_dimensions(obj);
 	    		itemsContainer.animate({marginLeft: left}, function(){
 	    			obj.elmntViewer.attr('style', '');
 	    			itemsContainer.attr('style', '');
@@ -396,15 +395,57 @@ $(function(){
 	    	}
 
 	    	function ezoFade(obj) {
-				viewer_height(obj);
+				viewer_dimensions(obj);
 				currentItem.elmntViewer.fadeTo(1000, 0);
 	    		obj.elmntViewer.fadeTo(0,0).fadeTo(1000, 1, function(){
 					callback();
 	    		});
 	    	}
 
+	    	function ezoWave() {
+	    		obj.elmntViewer.fadeTo(0,0)
+	    		
+	    		var waveHtml = '<div class="eg-wave">{items}</div>';
+	    		var waveNbr = 10;
+	    		var waveItemSize = obj.elmntViewer.width()/waveNbr;
+	    		var waveItemHtml = '';
+	    		for(i=0; i<waveNbr; i++) {
+	    			waveItemHtml += '<div class="eg-wave-item"></div>';
+	    		}
+	    		waveHtml = waveHtml.replace('{items}', waveItemHtml);
+	    		itemsContainer.append(waveHtml);
+	    		var wave = itemsContainer.find('.eg-wave').css({
+	    			width: obj.elmntViewer.width(),
+	    			height: obj.elmntViewer.height(),
+	    			position: 'absolute',
+	    			zIndex: '1000'
+	    		});
+    			var waveItem = wave.find('.eg-wave-item').css({
+    				background: 'url('+obj.fullsize+') no-repeat top left',
+    				width: waveItemSize,
+    				height: '100%',
+    				marginTop: '-100%',
+    				float: 'left'
+    			});
+    			wave.ready(function(){
+	    			waveItem.each(function(index){
+	    				$(this).css({backgroundPosition: -index*waveItemSize+'px 0'});
+		    			$(this).delay(index*50).animate({marginTop: 0}, function(){
+		    				if(index == waveNbr-1) {
+	    						viewer_dimensions(obj);
+		    					obj.elmntViewer.fadeTo(500, 1);
+	    						currentItem.elmntViewer.fadeTo(500, 0, function(){	
+	    							wave.remove();
+	    							callback();
+	    						})
+		    				}
+		    			});
+	    			});
+    			});
+	    	}
+
 	    	function ezoNone(obj) {
-				viewer_height(obj, false, true);
+				viewer_dimensions(obj, false, true);
 				callback();
 	    	}
 	    }
@@ -434,7 +475,7 @@ $(function(){
 	    	function ezoFadeIn() {
 	    		background.fadeTo(1000,0.5);
 				viewerContent.fadeTo(1000, 1);
-	    		viewer_height(currentItem, function(){
+	    		viewer_dimensions(currentItem, function(){
 					callback();
 				}, true);
 	    	}
@@ -462,7 +503,7 @@ $(function(){
 				});
 				currentItem.elmnt.append(imageZoom);
 				imageZoom.ezoloadImage(function(){
-					viewer_height(currentItem, function(){
+					viewer_dimensions(currentItem, function(){
 						imageZoom.animate({
 							width:image.width(), 
 							height:image.height(), 
@@ -517,7 +558,7 @@ $(function(){
 				});
 				currentItem.elmnt.append(imageZoom);
 				imageZoom.ezoloadImage(function(){
-					viewer_height(currentItem, function(){
+					viewer_dimensions(currentItem, function(){
 						imageZoom.animate({
 							width:image.width(), 
 							height:image.height(), 

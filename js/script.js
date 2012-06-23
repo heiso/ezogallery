@@ -9,6 +9,7 @@ $(function(){
 		}
 	});
 	$('.ezogallery2').ezogallery({
+		transitionEffect: 'wave',
 		viewerEffects: {
 			open: 'back',
 			close: 'back'

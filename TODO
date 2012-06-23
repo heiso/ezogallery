@@ -1,4 +1,12 @@
 ajout easing
 ajout effets de transition
-multi gallery avec template diff
 ne pas vider le cache en multi gallery ?
+resize taille fenetre lors ouverture
+supprimer fixed, remplacer par un smooth semi-fixed
+
+Bug : 
+IE7 IE8 - multigallery open bug
+IE7 - slide wave instant
+IE8 - slide wave decalé
+Chrome Safari - open effect back position center
+Safari - slide wave inversé
