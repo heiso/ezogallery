@@ -5,7 +5,8 @@ resize taille fenetre lors ouverture
 supprimer fixed, remplacer par un smooth semi-fixed
 
 Bug : 
-IE7 IE8 - multigallery open bug
+IE7 IE8 - multigallery open back
+IE7 IE8 - multigallery slide load image (ezoloadimage)
 IE7 - slide wave instant
 IE8 - slide wave decalé
 Chrome Safari - open effect back position center

@@ -404,7 +404,6 @@ $(function(){
 
 	    	function ezoWave() {
 	    		obj.elmntViewer.fadeTo(0,0)
-	    		
 	    		var waveHtml = '<div class="eg-wave">{items}</div>';
 	    		var waveNbr = 10;
 	    		var waveItemSize = obj.elmntViewer.width()/waveNbr;
