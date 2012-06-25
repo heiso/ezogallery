@@ -228,6 +228,7 @@ $(function(){
 		}
 
 		function viewer_open(obj, preload) {
+			viewerTriggerActive = false;
 			if(obj == null)
 				currentItem = itemsList[0];
 			else
@@ -420,16 +421,15 @@ $(function(){
 	    			zIndex: '1000'
 	    		});
     			var waveItem = wave.find('.eg-wave-item').css({
-    				background: 'url('+obj.fullsize+') no-repeat top left',
+    				background: 'url('+obj.fullsize+') no-repeat 0 -'+obj.elmntViewer.height()+'px',
     				width: waveItemSize,
     				height: '100%',
-    				marginTop: '-100%',
     				float: 'left'
     			});
     			wave.ready(function(){
 	    			waveItem.each(function(index){
-	    				$(this).css({backgroundPosition: -index*waveItemSize+'px 0'});
-		    			$(this).delay(index*50).animate({marginTop: 0}, function(){
+	    				$(this).css({backgroundPosition: -index*waveItemSize+'px -'+obj.elmntViewer.height()+'px'});
+    					$(this).delay(index*50).animate({backgroundPosition: -index*waveItemSize+'px 0'}, function(){
 		    				if(index == waveNbr-1) {
 	    						viewer_dimensions(obj);
 		    					obj.elmntViewer.fadeTo(500, 1);
@@ -453,7 +453,8 @@ $(function(){
 	    	var validEffects = new Array(
 	    		'fade',
 	    		'zoom',
-	    		'back'
+	    		'back',
+	    		'none'
 	    	);
 	    	var validDirections = new Array(
 	    		'in',
@@ -551,8 +552,8 @@ $(function(){
 					zIndex:'1000',
 					width:0,
 					height:0,
-					left:'50%',
-					top:'50%',
+					left:$(window).width()/2,
+					top:$(window).height()/2,
 					opacity:0
 				});
 				currentItem.elmnt.append(imageZoom);
@@ -585,8 +586,8 @@ $(function(){
 						imageZoom.animate({
 							width:0, 
 							height:0, 
-							left:'50%', 
-							top:'50%', 
+							left:$(window).width()/2,
+							top:$(window).height()/2,
 							opacity:0
 						}, function(){
 							imageZoom.remove();
@@ -595,7 +596,23 @@ $(function(){
 					});
 				});
 	    	}
+
+		    function ezoNoneIn() {
+		    	background.fadeTo(0,0.5);
+				viewerContent.fadeTo(0, 1);
+	    		viewer_dimensions(currentItem, function(){
+					callback();
+				}, true);
+		    }
+
+		    function ezoNoneOut() {
+	    		background.fadeTo(0, 0);
+	    		viewerContent.fadeTo(0, 0, function(){
+	    			callback();
+	    		})
+	    	}
 	    }
+
 
 	    function loader_open() {
 			if(open)
@@ -636,7 +653,7 @@ $(function(){
     	* IE tips
     	**/
     	if(navigator.appName == "Microsoft Internet Explorer") {
-    		item.attr('src', item.attr('src')+'?'+new Date().getTime());
+    		// item.attr('src', item.attr('src')+'?'+new Date().getTime());
 			if(item.prop('complete')) {
 				if(typeof callback == 'function')
 					callback();

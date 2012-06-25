@@ -3,11 +3,8 @@ ajout effets de transition
 ne pas vider le cache en multi gallery ?
 resize taille fenetre lors ouverture
 supprimer fixed, remplacer par un smooth semi-fixed
+load image d'un coup
 
 Bug : 
-IE7 IE8 - multigallery open back
-IE7 IE8 - multigallery slide load image (ezoloadimage)
-IE7 - slide wave instant
-IE8 - slide wave decalé
-Chrome Safari - open effect back position center
-Safari - slide wave inversé
+Chrome Safari IE7 IE8 - open effect back position center //solved ??
+Safari - slide wave ezoloadimage
