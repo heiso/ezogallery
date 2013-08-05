@@ -12,7 +12,7 @@ Default html template :
 
 ----------------------------------------------------------------------------------------
 
-Enable ezogallery on youClass :
+Enable ezogallery on yourClass :
 
 	$('.yourClass').ezogallery();
 
@@ -32,5 +32,5 @@ If you want to change defaults settings
 ----------------------------------------------------------------------------------------
 
 alt and src attributes are mandatory,
-title attribute is note mandatory, if no title, alt will be use as title
+title attribute is not mandatory, if no title, alt will be used as title
 you can change the default template, juste keep the same logic
